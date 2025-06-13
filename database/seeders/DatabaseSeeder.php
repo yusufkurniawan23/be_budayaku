@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -12,11 +11,22 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // \App\Models\User::factory(10)->create();
-
-        // \App\Models\User::factory()->create([
-        //     'name' => 'Test User',
-        //     'email' => 'test@example.com',
-        // ]);
+        // Jalankan seeder dalam urutan yang benar berdasarkan dependensi
+        $this->call([
+            // 1. Category harus pertama karena Budaya bergantung padanya
+            CategorySeeder::class,
+            
+            // 2. User harus sebelum Seniman karena Seniman bisa punya User
+            UserSeeder::class,
+            
+            // 3-6. Seeder sisanya
+            SenimanSeeder::class,
+            BudayaSeeder::class,
+            AgendaSeeder::class,
+            ContactSeeder::class,
+            
+            // 7. Post seeder (jika diperlukan)
+            // PostSeeder::class, // Uncomment jika Post digunakan
+        ]);
     }
 }

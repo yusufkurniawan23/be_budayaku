@@ -3,17 +3,27 @@
 namespace Database\Seeders;
 
 use App\Models\Category;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class CategorySeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        Category::create(['name' => 'Cagar Budaya']);
-        Category::create(['name' => 'Cagar Alam']);
+        $categories = [
+            ['name' => 'Cagar Budaya'],
+            ['name' => 'Cagar Alam'],
+            ['name' => 'Seni Tradisional'],
+            ['name' => 'Arsitektur Tradisional'],
+            ['name' => 'Kuliner Tradisional'],
+            ['name' => 'Pakaian Adat'],
+            ['name' => 'Ritual Adat'],
+            ['name' => 'Kerajinan Tangan'],
+            ['name' => 'Musik Tradisional'],
+            ['name' => 'Tarian Tradisional'],
+        ];
+
+        foreach ($categories as $category) {
+            Category::create($category);
+        }
     }
 }

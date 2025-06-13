@@ -4,7 +4,6 @@ use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\ServiceProvider;
 
 return [
-
     /*
     |--------------------------------------------------------------------------
     | Application Name
@@ -167,7 +166,12 @@ return [
         App\Providers\AuthServiceProvider::class,
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
+        App\Providers\Filament\AdminPanelProvider::class,
         App\Providers\RouteServiceProvider::class,
+        Filament\FilamentServiceProvider::class,
+        Filament\Support\SupportServiceProvider::class,
+        Filament\Tables\TablesServiceProvider::class,
+        Filament\Forms\FormsServiceProvider::class,
     ])->toArray(),
 
     /*
