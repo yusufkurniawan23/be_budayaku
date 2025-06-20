@@ -4,13 +4,29 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class Seniman extends Model
+class Seniman extends Model implements HasMedia
 {
-    use HasFactory;
-    
-    protected $table = 'senimans'; 
-    protected $fillable = ['nama', 'alamat', 'judul', 'foto', 'nomor', 'deskripsi'];
+    use HasFactory, InteractsWithMedia;
+
+    protected $table = 'senimans';
+    protected $fillable = ['nama', 'alamat', 'judul', 'nomor', 'deskripsi'];
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('foto')
+            ->acceptsMimeTypes(['image/jpg', 'image/png', 'image/jpeg', 'image/webp'])
+            ->singleFile();
+    }
+
+    public function registerMediaConversions(Media $media = null): void
+    {
+        $this->addMediaConversion('thumb')
+            ->width(200)
+            ->height(200)
+            ->sharpen(10);
+    }
 }
-
-

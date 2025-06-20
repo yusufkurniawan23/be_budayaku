@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('category_id')->nullable()->constrained('categories')->onDelete('set null'); // Menggunakan category_id
             $table->date('tanggal');
-            $table->string('foto')->nullable();
             $table->text('deskripsi');
             $table->string('nama_objek'); // Ganti jenis_kebudayaan menjadi nama_objek
             $table->timestamps();

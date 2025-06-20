@@ -1,10 +1,8 @@
 <?php
-// filepath: d:\budayaku-app\app\Http\Controllers\Api\SenimanController.php
-
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
+use Illuminate\Routing\Controller;
 use App\Models\Seniman;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;

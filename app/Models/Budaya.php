@@ -15,37 +15,29 @@ class Budaya extends Model implements HasMedia
 
     protected $table = 'budayas';
     protected $fillable = [
-        'category_id', 
+        'category_id',
+        'nama_objek',
         'tanggal',
         'deskripsi',
-        'nama_objek'
     ];
 
     public function category()
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsTo(\App\Models\Category::class);
     }
-    
-    public function registerMediaConversions(Media $media = null): void
-    {
-        $this->addMediaConversion('thumb')
-            ->width(200)
-            ->height(200)
-            ->sharpen(10);
-            
-        $this->addMediaConversion('preview')
-            ->width(800)
-            ->height(450);
-            
-        $this->addMediaConversion('large')
-            ->width(1200)
-            ->height(675);
-    }
-    
+
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('foto')
-            ->singleFile()
-            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
+            ->acceptsMimeTypes(['image/jpg', 'image/png', 'image/jpeg', 'image/webp'])
+            ->singleFile();
+    }
+
+    public function registerMediaConversions(Media $media = null): void
+    {
+        $this->addMediaConversion('thumb')
+            ->width(400)
+            ->height(225)
+            ->sharpen(10);
     }
 }

@@ -19,11 +19,8 @@ class BudayaResource extends Resource
     protected static ?string $model = Budaya::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-building-library';
-
     protected static ?string $navigationGroup = 'Konten';
-    
     protected static ?string $navigationLabel = 'Budaya';
-    
     protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
@@ -41,9 +38,8 @@ class BudayaResource extends Resource
                         Forms\Components\TextInput::make('nama_objek')
                             ->label('Nama Objek Budaya')
                             ->required()
-                            ->maxLength(255)
-                            ->placeholder('Masukkan nama objek budaya'),
-                            
+                            ->maxLength(255),
+
                         Forms\Components\DatePicker::make('tanggal')
                             ->label('Tanggal')
                             ->required()
@@ -55,14 +51,10 @@ class BudayaResource extends Resource
                             ->label('Foto')
                             ->image()
                             ->imageEditor()
-                            ->imageEditorAspectRatios([
-                                '16:9',
-                                '4:3',
-                                '1:1',
-                            ])
+                            ->imageEditorAspectRatios(['16:9', '4:3', '1:1'])
                             ->imageEditorViewportWidth('1200')
                             ->imageEditorViewportHeight('675')
-                            ->maxSize(5120) // 5MB
+                            ->maxSize(5120)
                             ->hint('Format gambar: JPG, PNG, WEBP. Ukuran max: 5MB')
                             ->helperText('Disarankan gambar dengan rasio 16:9')
                             ->panelAspectRatio('16:9')
@@ -75,10 +67,9 @@ class BudayaResource extends Resource
                             ->required()
                             ->columnSpanFull()
                             ->toolbarButtons([
-                                'bold', 'italic', 'underline', 'strike', 'link', 
+                                'bold', 'italic', 'underline', 'strike', 'link',
                                 'bulletList', 'orderedList', 'redo', 'undo'
-                            ])
-                            ->placeholder('Berikan deskripsi lengkap tentang objek budaya'),
+                            ]),
                     ]),
             ]);
     }
@@ -91,11 +82,11 @@ class BudayaResource extends Resource
                     ->label('Nama Objek')
                     ->searchable()
                     ->sortable(),
-                    
+
                 Tables\Columns\TextColumn::make('category.name')
                     ->label('Kategori')
                     ->sortable(),
-                    
+
                 SpatieMediaLibraryImageColumn::make('foto')
                     ->label('Foto')
                     ->collection('foto')
@@ -103,18 +94,18 @@ class BudayaResource extends Resource
                     ->circular(false)
                     ->size(80)
                     ->extraImgAttributes(['loading' => 'lazy']),
-                    
+
                 Tables\Columns\TextColumn::make('tanggal')
                     ->label('Tanggal')
                     ->date('d M Y')
                     ->sortable(),
-                    
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat')
                     ->dateTime('d M Y, H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                    
+
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Diperbarui')
                     ->dateTime('d M Y, H:i')
@@ -127,11 +118,11 @@ class BudayaResource extends Resource
                     ->relationship('category', 'name')
                     ->searchable()
                     ->multiple(),
-                    
+
                 Tables\Filters\Filter::make('cagar_budaya')
                     ->label('Cagar Budaya')
                     ->query(fn (Builder $query): Builder => $query->whereHas('category', fn ($q) => $q->where('name', 'Cagar Budaya'))),
-                    
+
                 Tables\Filters\Filter::make('cagar_alam')
                     ->label('Cagar Alam')
                     ->query(fn (Builder $query): Builder => $query->whereHas('category', fn ($q) => $q->where('name', 'Cagar Alam'))),
@@ -180,7 +171,7 @@ class BudayaResource extends Resource
     {
         $cagarBudayaCount = static::getModel()::whereHas('category', fn ($q) => $q->where('name', 'Cagar Budaya'))->count();
         $cagarAlamCount = static::getModel()::whereHas('category', fn ($q) => $q->where('name', 'Cagar Alam'))->count();
-        
+
         if ($cagarBudayaCount > 0 && $cagarAlamCount > 0) {
             return 'success';
         } elseif ($cagarBudayaCount > 0 || $cagarAlamCount > 0) {

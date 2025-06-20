@@ -46,7 +46,7 @@ class AgendaResource extends Resource
                             ->schema([
                                 Forms\Components\DatePicker::make('tanggal_mulai')
                                     ->label('Tanggal Mulai')
-                                    ->required()
+                                    ->required() //wajib
                                     ->format('Y-m-d')
                                     ->minDate(now())
                                     ->default(now()),

@@ -10,30 +10,28 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
+use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 
 class SenimanResource extends Resource
 {
     protected static ?string $model = Seniman::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
-    
     protected static ?string $navigationGroup = 'Konten';
-    
     protected static ?string $navigationLabel = 'Seniman';
-    
     protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Informasi Seniman') 
+                Forms\Components\Section::make('Informasi Seniman')
                     ->schema([
                         Forms\Components\TextInput::make('nama')
                             ->label('Nama Seniman')
                             ->required()
-                            ->maxLength(255)
-                            ->placeholder('Masukkan nama seniman'),
+                            ->maxLength(255),
 
                         Forms\Components\TextInput::make('judul')
                             ->label('Keahlian / Judul')
@@ -52,28 +50,24 @@ class SenimanResource extends Resource
                             ->required()
                             ->maxLength(20),
 
-                        Forms\Components\FileUpload::make('foto')
+                        SpatieMediaLibraryFileUpload::make('foto')
+                            ->collection('foto')
                             ->label('Foto')
                             ->image()
+                            ->imageEditor()
                             ->required()
-                            ->maxSize(5120) // 5MB
-                            ->directory('seniman')
-                            ->preserveFilenames()
-                            ->imagePreviewHeight('250')
-                            ->imageResizeMode('cover')
-                            ->imageCropAspectRatio('1:1')
-                            ->imageResizeTargetWidth('500')
-                            ->imageResizeTargetHeight('500'),
+                            ->maxSize(5120)
+                            ->panelAspectRatio('1:1')
+                            ->panelLayout('integrated'),
 
                         Forms\Components\RichEditor::make('deskripsi')
                             ->label('Deskripsi')
                             ->required()
                             ->columnSpanFull()
                             ->toolbarButtons([
-                                'bold', 'italic', 'underline', 'strike', 'link', 
+                                'bold', 'italic', 'underline', 'strike', 'link',
                                 'bulletList', 'orderedList', 'redo', 'undo'
-                            ])
-                            ->placeholder('Berikan deskripsi lengkap tentang seniman'),
+                            ]),
                     ]),
             ]);
     }
@@ -82,34 +76,26 @@ class SenimanResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\ImageColumn::make('foto')
+                SpatieMediaLibraryImageColumn::make('foto')
+                    ->collection('foto')
                     ->label('Foto')
                     ->circular()
                     ->size(60),
-                    
                 Tables\Columns\TextColumn::make('nama')
                     ->label('Nama')
                     ->searchable()
-                    ->sortable()
-                    ->wrap(),
-                    
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('judul')
                     ->label('Keahlian')
                     ->searchable()
-                    ->sortable()
-                    ->wrap(),
-                    
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('alamat')
                     ->label('Alamat')
                     ->searchable()
-                    ->sortable()
-                    ->toggleable(),
-                    
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('nomor')
                     ->label('Nomor Telepon')
-                    ->searchable()
-                    ->toggleable(),
-                    
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat')
                     ->dateTime('d M Y, H:i')
@@ -120,7 +106,7 @@ class SenimanResource extends Resource
                 Tables\Filters\Filter::make('tari')
                     ->label('Seniman Tari')
                     ->query(fn (Builder $query): Builder => $query->where('judul', 'like', '%tari%')),
-                
+
                 Tables\Filters\Filter::make('musik')
                     ->label('Seniman Musik')
                     ->query(fn (Builder $query): Builder => $query->where('judul', 'like', '%musik%')),
@@ -154,14 +140,14 @@ class SenimanResource extends Resource
             ])
             ->defaultSort('created_at', 'desc');
     }
-    
+
     public static function getRelations(): array
     {
         return [
             //
         ];
     }
-    
+
     public static function getPages(): array
     {
         return [
