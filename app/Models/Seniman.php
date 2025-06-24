@@ -18,15 +18,7 @@ class Seniman extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('foto')
-            ->acceptsMimeTypes(['image/jpg', 'image/png', 'image/jpeg', 'image/webp'])
-            ->singleFile();
-    }
-
-    public function registerMediaConversions(Media $media = null): void
-    {
-        $this->addMediaConversion('thumb')
-            ->width(200)
-            ->height(200)
-            ->sharpen(10);
+            ->singleFile()
+            ->acceptsMimeTypes(['image/jpg', 'image/png', 'image/jpeg', 'image/webp']);
     }
 }

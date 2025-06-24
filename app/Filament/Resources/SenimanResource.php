@@ -68,7 +68,8 @@ class SenimanResource extends Resource
                                 'bold', 'italic', 'underline', 'strike', 'link',
                                 'bulletList', 'orderedList', 'redo', 'undo'
                             ]),
-                    ]),
+                    ])
+                    ->columns(2),
             ]);
     }
 
@@ -80,22 +81,53 @@ class SenimanResource extends Resource
                     ->collection('foto')
                     ->label('Foto')
                     ->circular()
-                    ->size(60),
+                    ->size(80),
+
                 Tables\Columns\TextColumn::make('nama')
                     ->label('Nama')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->weight('medium'),
+
                 Tables\Columns\TextColumn::make('judul')
                     ->label('Keahlian')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->wrap(),
+
                 Tables\Columns\TextColumn::make('alamat')
                     ->label('Alamat')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->limit(30)
+                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
+                        $state = $column->getState();
+                        if (strlen($state) <= 30) {
+                            return null;
+                        }
+                        return $state;
+                    }),
+
+                Tables\Columns\TextColumn::make('deskripsi')
+                    ->label('Deskripsi')
+                    ->html()
+                    ->limit(50)
+                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
+                        $state = strip_tags($column->getState());
+                        if (strlen($state) <= 50) {
+                            return null;
+                        }
+                        return $state;
+                    })
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('nomor')
                     ->label('Nomor Telepon')
-                    ->searchable(),
+                    ->searchable()
+                    ->copyable()
+                    ->copyMessage('Nomor telepon disalin!')
+                    ->icon('heroicon-m-phone'),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat')
                     ->dateTime('d M Y, H:i')
@@ -110,23 +142,41 @@ class SenimanResource extends Resource
                 Tables\Filters\Filter::make('musik')
                     ->label('Seniman Musik')
                     ->query(fn (Builder $query): Builder => $query->where('judul', 'like', '%musik%')),
+                
+                Tables\Filters\Filter::make('lukis')
+                    ->label('Seniman Lukis')
+                    ->query(fn (Builder $query): Builder => $query->where('judul', 'like', '%lukis%')),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()
                     ->modalHeading('Detail Seniman')
-                    ->modalContent(fn (Seniman $record) => view('filament.resources.seniman-resource.modal-content', ['record' => $record])),
+                    ->modalWidth('4xl')
+                    ->modalContent(function (Seniman $record) {
+                        return view('filament.resources.seniman-resource.view-modal', [
+                            'record' => $record
+                        ]);
+                    }),
+                
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                
+                Tables\Actions\DeleteAction::make()
+                    ->requiresConfirmation()
+                    ->modalHeading('Hapus Seniman')
+                    ->modalDescription('Apakah Anda yakin ingin menghapus data seniman ini? Tindakan ini tidak dapat dibatalkan.')
+                    ->modalSubmitActionLabel('Ya, Hapus'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->requiresConfirmation()
+                        ->modalHeading('Hapus Seniman Terpilih')
+                        ->modalDescription('Apakah Anda yakin ingin menghapus semua seniman yang dipilih? Tindakan ini tidak dapat dibatalkan.'),
+                    
                     Tables\Actions\BulkAction::make('exportPDF')
                         ->label('Export PDF')
                         ->icon('heroicon-o-document-arrow-down')
+                        ->color('success')
                         ->action(function (array $records) {
-                            // Implementasi export PDF disini
-                            // Untuk saat ini hanya notifikasi
                             \Filament\Notifications\Notification::make()
                                 ->title(count($records) . ' seniman siap diexport')
                                 ->success()
@@ -136,16 +186,17 @@ class SenimanResource extends Resource
             ])
             ->emptyStateActions([
                 Tables\Actions\CreateAction::make()
-                    ->label('Tambah Seniman Baru'),
+                    ->label('Tambah Seniman Baru')
+                    ->icon('heroicon-o-plus'),
             ])
-            ->defaultSort('created_at', 'desc');
+            ->defaultSort('created_at', 'desc')
+            ->striped()
+            ->paginated([10, 25, 50, 100]);
     }
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array

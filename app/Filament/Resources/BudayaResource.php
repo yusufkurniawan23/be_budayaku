@@ -48,19 +48,17 @@ class BudayaResource extends Resource
 
                         SpatieMediaLibraryFileUpload::make('foto')
                             ->collection('foto')
-                            ->label('Foto')
+                            ->label('Foto Budaya')
                             ->image()
                             ->imageEditor()
-                            ->imageEditorAspectRatios(['16:9', '4:3', '1:1'])
-                            ->imageEditorViewportWidth('1200')
-                            ->imageEditorViewportHeight('675')
+                            ->imageEditorMode(2)
+                            ->imageCropAspectRatio('16:9')
+                            ->imageResizeTargetWidth('800')
+                            ->imageResizeTargetHeight('450')
                             ->maxSize(5120)
+                            ->required()
                             ->hint('Format gambar: JPG, PNG, WEBP. Ukuran max: 5MB')
-                            ->helperText('Disarankan gambar dengan rasio 16:9')
-                            ->panelAspectRatio('16:9')
-                            ->panelLayout('integrated')
-                            ->openable()
-                            ->downloadable(),
+                            ->helperText('Disarankan gambar dengan rasio 16:9'),
 
                         Forms\Components\RichEditor::make('deskripsi')
                             ->label('Deskripsi')
@@ -70,7 +68,8 @@ class BudayaResource extends Resource
                                 'bold', 'italic', 'underline', 'strike', 'link',
                                 'bulletList', 'orderedList', 'redo', 'undo'
                             ]),
-                    ]),
+                    ])
+                    ->columns(2),
             ]);
     }
 
@@ -78,22 +77,40 @@ class BudayaResource extends Resource
     {
         return $table
             ->columns([
+                SpatieMediaLibraryImageColumn::make('foto')
+                    ->collection('foto')
+                    ->label('Foto')
+                    ->size(80)
+                    ->square(),
+
                 Tables\Columns\TextColumn::make('nama_objek')
                     ->label('Nama Objek')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->weight('medium'),
 
                 Tables\Columns\TextColumn::make('category.name')
                     ->label('Kategori')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'Cagar Budaya' => 'warning',
+                        'Cagar Alam' => 'success',
+                        default => 'gray',
+                    })
                     ->sortable(),
 
-                SpatieMediaLibraryImageColumn::make('foto')
-                    ->label('Foto')
-                    ->collection('foto')
-                    ->conversion('thumb')
-                    ->circular(false)
-                    ->size(80)
-                    ->extraImgAttributes(['loading' => 'lazy']),
+                Tables\Columns\TextColumn::make('deskripsi')
+                    ->label('Deskripsi')
+                    ->html()
+                    ->limit(50)
+                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
+                        $state = strip_tags($column->getState());
+                        if (strlen($state) <= 50) {
+                            return null;
+                        }
+                        return $state;
+                    })
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('tanggal')
                     ->label('Tanggal')
@@ -126,31 +143,61 @@ class BudayaResource extends Resource
                 Tables\Filters\Filter::make('cagar_alam')
                     ->label('Cagar Alam')
                     ->query(fn (Builder $query): Builder => $query->whereHas('category', fn ($q) => $q->where('name', 'Cagar Alam'))),
+
+                Tables\Filters\Filter::make('tahun_ini')
+                    ->label('Tahun Ini')
+                    ->query(fn (Builder $query): Builder => $query->whereYear('tanggal', now()->year)),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()
-                    ->modalHeading('Lihat Detail Budaya')
-                    ->modalContent(fn (Budaya $record) => view('filament.resources.budaya-resource.modal-content', ['record' => $record]))
-                    ->modalWidth('md'),
+                    ->modalHeading('Detail Budaya')
+                    ->modalWidth('4xl')
+                    ->modalContent(function (Budaya $record) {
+                        return view('filament.resources.budaya-resource.view-modal', [
+                            'record' => $record
+                        ]);
+                    }),
+
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+
+                Tables\Actions\DeleteAction::make()
+                    ->requiresConfirmation()
+                    ->modalHeading('Hapus Budaya')
+                    ->modalDescription('Apakah Anda yakin ingin menghapus data budaya ini? Tindakan ini tidak dapat dibatalkan.')
+                    ->modalSubmitActionLabel('Ya, Hapus'),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->requiresConfirmation()
+                        ->modalHeading('Hapus Budaya Terpilih')
+                        ->modalDescription('Apakah Anda yakin ingin menghapus semua budaya yang dipilih? Tindakan ini tidak dapat dibatalkan.'),
+
+                    Tables\Actions\BulkAction::make('exportPDF')
+                        ->label('Export PDF')
+                        ->icon('heroicon-o-document-arrow-down')
+                        ->color('success')
+                        ->action(function (array $records) {
+                            \Filament\Notifications\Notification::make()
+                                ->title(count($records) . ' budaya siap diexport')
+                                ->success()
+                                ->send();
+                        })
                 ]),
             ])
             ->emptyStateActions([
                 Tables\Actions\CreateAction::make()
-                    ->label('Tambah Budaya Baru'),
-            ]);
+                    ->label('Tambah Budaya Baru')
+                    ->icon('heroicon-o-plus'),
+            ])
+            ->defaultSort('tanggal', 'desc')
+            ->striped()
+            ->paginated([10, 25, 50, 100]);
     }
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array

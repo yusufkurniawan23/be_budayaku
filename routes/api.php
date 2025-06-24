@@ -6,7 +6,6 @@ use App\Http\Controllers\Api\BudayaController;
 use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SenimanController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -31,8 +30,6 @@ Route::get('/seniman/{id}', [SenimanController::class, 'show']);
 // Budaya (public)
 Route::get('/budaya', [BudayaController::class, 'index']);
 Route::get('/budaya/{id}', [BudayaController::class, 'show']);
-Route::get('/cagar-budaya', [BudayaController::class, 'cagarBudaya']);
-Route::get('/cagar-alam', [BudayaController::class, 'cagarAlam']);
 
 // Agenda (public)
 Route::get('/agenda', [AgendaController::class, 'index']);

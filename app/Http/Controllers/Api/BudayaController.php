@@ -1,136 +1,107 @@
 <?php
 
-
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Budaya;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 class BudayaController extends Controller
 {
     public function index(Request $request)
     {
+        Log::info('Fetching budaya with filters', $request->all());
+
         $query = Budaya::with('category');
-        
-        // Filter by category
+
+        if ($request->search) {
+            $query->where(function ($q) use ($request) {
+                $q->where('nama_objek', 'like', '%' . $request->search . '%')
+                    ->orWhere('deskripsi', 'like', '%' . $request->search . '%');
+            });
+        }
+
         if ($request->category_id) {
             $query->where('category_id', $request->category_id);
         }
-        
-        // Date range filter
+
+        if ($request->category) {
+            $query->whereHas('category', function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->category . '%');
+            });
+        }
+
         if ($request->start_date) {
             $query->whereDate('tanggal', '>=', $request->start_date);
         }
-        
+
         if ($request->end_date) {
             $query->whereDate('tanggal', '<=', $request->end_date);
         }
-        
-        $budaya = $query->paginate(10);
-        
-        return response()->json($budaya);
+
+        $sortBy = $request->get('sort_by', 'tanggal');
+        $sortOrder = $request->get('sort_order', 'desc');
+        $query->orderBy($sortBy, $sortOrder);
+
+        $perPage = $request->get('per_page', 10);
+        $budaya = $query->paginate($perPage);
+
+        $budaya->getCollection()->transform(function ($item) {
+            $item->foto_url = $item->getFirstMediaUrl('foto') ?: null;
+
+            unset($item->media);
+
+            return $item;
+        });
+
+        Log::info('Budaya fetched successfully', ['count' => $budaya->count()]);
+
+        return response()->json([
+            'success' => true,
+            'data' => $budaya->items(),
+            'meta' => [
+                'current_page' => $budaya->currentPage(),
+                'last_page' => $budaya->lastPage(),
+                'per_page' => $budaya->perPage(),
+                'total' => $budaya->total(),
+                'from' => $budaya->firstItem(),
+                'to' => $budaya->lastItem()
+            ]
+        ]);
     }
-    
+
     public function show($id)
     {
-        $budaya = Budaya::with('category')->findOrFail($id);
-        return response()->json($budaya);
-    }
-    
-    public function cagarBudaya()
-    {
-        // Assuming category_id 1 is for cagar budaya
-        $budaya = Budaya::where('category_id', 1)->paginate(10);
-        return response()->json($budaya);
-    }
-    
-    public function cagarAlam()
-    {
-        // Assuming category_id 2 is for cagar alam
-        $budaya = Budaya::where('category_id', 2)->paginate(10);
-        return response()->json($budaya);
-    }
-    
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'category_id' => 'required|exists:categories,id',
-            'nama_objek' => 'required|string',
-            'tanggal' => 'required|date',
-            'deskripsi' => 'required|string',
-            'foto' => 'nullable|image|max:2048',
-        ]);
-        
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        Log::info('Showing budaya details', ['id' => $id]);
+
+        try {
+            $budaya = Budaya::with('category')->findOrFail($id);
+
+            $budaya->foto_url = $budaya->getFirstMediaUrl('foto') ?: null;
+
+            unset($budaya->media);
+
+            Log::info('Budaya details fetched successfully', ['id' => $id, 'nama_objek' => $budaya->nama_objek]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $budaya
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::warning('Budaya not found', ['id' => $id]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Data budaya tidak ditemukan'
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch budaya details', ['id' => $id, 'error' => $e->getMessage()]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil data'
+            ], 500);
         }
-        
-        $data = $request->all();
-        
-        if ($request->hasFile('foto')) {
-            $path = $request->file('foto')->store('budaya', 'public');
-            $data['foto'] = $path;
-        }
-        
-        $budaya = Budaya::create($data);
-        
-        return response()->json([
-            'message' => 'Budaya data created successfully',
-            'data' => $budaya
-        ], 201);
-    }
-    
-    public function update(Request $request, $id)
-    {
-        $budaya = Budaya::findOrFail($id);
-        
-        $validator = Validator::make($request->all(), [
-            'category_id' => 'required|exists:categories,id',
-            'nama_objek' => 'required|string',
-            'tanggal' => 'required|date',
-            'deskripsi' => 'required|string',
-            'foto' => 'nullable|image|max:2048',
-        ]);
-        
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-        
-        $data = $request->all();
-        
-        if ($request->hasFile('foto')) {
-            // Delete old file if it exists
-            if ($budaya->foto && Storage::disk('public')->exists($budaya->foto)) {
-                Storage::disk('public')->delete($budaya->foto);
-            }
-            
-            $path = $request->file('foto')->store('budaya', 'public');
-            $data['foto'] = $path;
-        }
-        
-        $budaya->update($data);
-        
-        return response()->json([
-            'message' => 'Budaya data updated successfully',
-            'data' => $budaya
-        ]);
-    }
-    
-    public function destroy($id)
-    {
-        $budaya = Budaya::findOrFail($id);
-        
-        if ($budaya->foto && Storage::disk('public')->exists($budaya->foto)) {
-            Storage::disk('public')->delete($budaya->foto);
-        }
-        
-        $budaya->delete();
-        
-        return response()->json([
-            'message' => 'Budaya data deleted successfully'
-        ]);
     }
 }

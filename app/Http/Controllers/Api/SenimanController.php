@@ -2,127 +2,91 @@
 
 namespace App\Http\Controllers\Api;
 
-use Illuminate\Routing\Controller;
+use App\Http\Controllers\Controller;
 use App\Models\Seniman;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 class SenimanController extends Controller
 {
     public function index(Request $request)
     {
+        Log::info('Fetching seniman with filters', $request->all());
+
         $query = Seniman::query();
-        
-        // Filtering
+
         if ($request->search) {
-            $filter_by = $request->filter_by ?: 'nama';
-            $query->where($filter_by, 'like', '%' . $request->search . '%');
+            $query->where(function ($q) use ($request) {
+                $q->where('nama', 'like', '%' . $request->search . '%')
+                    ->orWhere('judul', 'like', '%' . $request->search . '%')
+                    ->orWhere('deskripsi', 'like', '%' . $request->search . '%');
+            });
         }
-        
-        // Year, month, date filtering (if applicable)
-        if ($request->year) {
-            $query->whereYear('created_at', $request->year);
+
+
+        if ($request->keahlian) {
+            $query->where('judul', 'like', '%' . $request->keahlian . '%');
         }
-        
-        if ($request->month) {
-            $query->whereMonth('created_at', $request->month);
-        }
-        
-        if ($request->date) {
-            $query->whereDay('created_at', $request->date);
-        }
-        
-        $seniman = $query->paginate(10);
-        
-        return response()->json($seniman);
+
+
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+        $query->orderBy($sortBy, $sortOrder);
+
+        $perPage = $request->get('per_page', 10);
+        $seniman = $query->paginate($perPage);
+
+        $seniman->getCollection()->transform(function ($item) {
+            $item->foto_url = $item->getFirstMediaUrl('foto') ?: null;
+            unset($item->media);
+            return $item;
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $seniman->items(),
+            'meta' => [
+                'current_page' => $seniman->currentPage(),
+                'last_page' => $seniman->lastPage(),
+                'per_page' => $seniman->perPage(),
+                'total' => $seniman->total(),
+                'from' => $seniman->firstItem(),
+                'to' => $seniman->lastItem()
+            ]
+        ]);
     }
-    
+
     public function show($id)
     {
-        $seniman = Seniman::findOrFail($id);
-        return response()->json($seniman);
-    }
-    
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'nama' => 'required|string',
-            'alamat' => 'required|string',
-            'judul' => 'required|string',
-            'nomor' => 'required|string',
-            'deskripsi' => 'required|string',
-            'foto' => 'nullable|image|max:2048',
-        ]);
-        
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        Log::info('Showing seniman details', ['id' => $id]);
+
+        try {
+            $seniman = Seniman::findOrFail($id);
+
+            $seniman->foto_url = $seniman->getFirstMediaUrl('foto') ?: null;
+
+            unset($seniman->media);
+
+            Log::info('Seniman details fetched successfully', ['id' => $id, 'nama' => $seniman->nama]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $seniman
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::warning('Seniman not found', ['id' => $id]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Data seniman tidak ditemukan'
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch seniman details', ['id' => $id, 'error' => $e->getMessage()]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil data'
+            ], 500);
         }
-        
-        $data = $request->all();
-        
-        if ($request->hasFile('foto')) {
-            $path = $request->file('foto')->store('seniman', 'public');
-            $data['foto'] = $path;
-        }
-        
-        $seniman = Seniman::create($data);
-        
-        return response()->json([
-            'message' => 'Seniman created successfully',
-            'data' => $seniman
-        ], 201);
-    }
-    
-    public function update(Request $request, $id)
-    {
-        $seniman = Seniman::findOrFail($id);
-        
-        $validator = Validator::make($request->all(), [
-            'nama' => 'required|string',
-            'alamat' => 'required|string',
-            'judul' => 'required|string',
-            'nomor' => 'required|string',
-            'deskripsi' => 'required|string',
-            'foto' => 'nullable|image|max:2048',
-        ]);
-        
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-        
-        $data = $request->all();
-        
-        if ($request->hasFile('foto')) {
-            // Delete old file if it exists
-            if ($seniman->foto && Storage::disk('public')->exists($seniman->foto)) {
-                Storage::disk('public')->delete($seniman->foto);
-            }
-            
-            $path = $request->file('foto')->store('seniman', 'public');
-            $data['foto'] = $path;
-        }
-        
-        $seniman->update($data);
-        
-        return response()->json([
-            'message' => 'Seniman updated successfully',
-            'data' => $seniman
-        ]);
-    }
-    
-    public function destroy($id)
-    {
-        $seniman = Seniman::findOrFail($id);
-        
-        if ($seniman->foto && Storage::disk('public')->exists($seniman->foto)) {
-            Storage::disk('public')->delete($seniman->foto);
-        }
-        
-        $seniman->delete();
-        
-        return response()->json([
-            'message' => 'Seniman deleted successfully'
-        ]);
     }
 }

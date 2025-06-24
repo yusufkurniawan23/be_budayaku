@@ -32,7 +32,6 @@ class ProfileController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
         
-        // Check current password if trying to change password
         if ($request->filled('current_password') && !Hash::check($request->current_password, $user->password)) {
             return response()->json(['errors' => ['current_password' => ['Current password is incorrect']]], 422);
         }
