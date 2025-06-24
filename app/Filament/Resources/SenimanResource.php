@@ -152,7 +152,7 @@ class SenimanResource extends Resource
                     ->modalHeading('Detail Seniman')
                     ->modalWidth('4xl')
                     ->modalContent(function (Seniman $record) {
-                        return view('filament.resources.seniman-resource.view-modal', [
+                        return view('filament.resources.seniman-resource.modal-content', [
                             'record' => $record
                         ]);
                     }),

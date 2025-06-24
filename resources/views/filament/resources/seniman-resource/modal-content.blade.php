@@ -2,7 +2,7 @@
 <div class="space-y-6">
     <div class="flex items-center space-x-4">
         @if($record->getFirstMediaUrl('foto'))
-            <img src="{{ $record->getFirstMediaUrl('foto', 'thumb') ?: $record->getFirstMediaUrl('foto') }}" alt="{{ $record->nama }}" class="h-24 w-24 rounded-full object-cover">
+            <img src="{{ $record->getFirstMediaUrl('foto') ?: $record->getFirstMediaUrl('foto') }}" alt="{{ $record->nama }}" class="h-24 w-24 rounded-full object-cover">
         @endif
         <div>
             <h3 class="text-xl font-bold">{{ $record->nama }}</h3>

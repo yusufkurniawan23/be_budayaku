@@ -153,7 +153,7 @@ class BudayaResource extends Resource
                     ->modalHeading('Detail Budaya')
                     ->modalWidth('4xl')
                     ->modalContent(function (Budaya $record) {
-                        return view('filament.resources.budaya-resource.view-modal', [
+                        return view('filament.resources.budaya-resource.modal-content', [
                             'record' => $record
                         ]);
                     }),

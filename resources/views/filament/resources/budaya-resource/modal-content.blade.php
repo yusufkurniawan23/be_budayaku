@@ -1,7 +1,7 @@
 <div class="space-y-4">
     <div>
         <h3 class="text-lg font-medium">{{ $record->nama_objek }}</h3>
-        <p class="text-sm text-gray-500">{{ $record->category->name }} - {{ $record->tanggal->format('d M Y') }}</p>
+        <p class="text-sm text-gray-500">{{ optional($record->category)->name }} - {{ optional($record->tanggal)->format('d M Y') }}</p>
     </div>
     
     @if($record->hasMedia('foto'))
